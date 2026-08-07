@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriGuard - Smart Plant Health Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+<div class="dashboard-container">
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-leaf"></i> AgriGuard</h1>
+            <p class="subtitle">AI-Powered Farming Assistant</p>
+        </div>
+        <div class="connection-status">
+            <span class="status-dot"></span> System Online
+        </div>
+    </header>
+
+    <main>
+
+        <!-- SENSOR SECTION -->
+        <section class="sensor-section">
+            <h2>Environmental Status</h2>
+            <div class="sensor-grid">
+
+                <div class="sensor-card moisture">
+                    <i class="fas fa-water sensor-icon"></i>
+                    <div class="sensor-info">
+                        <span class="label">Soil Moisture</span>
+                        <span class="value">{{ sensors.soil_moisture }}<small>%</small></span>
+                    </div>
+                </div>
+
+                <div class="sensor-card water">
+                    <i class="fas fa-tint sensor-icon"></i>
+                    <div class="sensor-info">
+                        <span class="label">Water Level</span>
+                        <span class="value">{{ sensors.water_level }}<small>cm</small></span>
+                    </div>
+                </div>
+
+                <div class="sensor-card temp">
+                    <i class="fas fa-thermometer-half sensor-icon"></i>
+                    <div class="sensor-info">
+                        <span class="label">Temperature</span>
+                        <span class="value">{{ sensors.temperature }}<small>°C</small></span>
+                    </div>
+                </div>
+                <div class="sensor-card moisture">
+                    <i class="fas fa-water sensor-icon"></i>
+                    <div class="sensor-info">
+                        <span class="label">MQ3</span>
+                        <span class="value">{{ sensors.mq3 }}</span>
+                    </div>             
+                </div>
+
+                <div class="sensor-card control">
+                    <i class="fas fa-cogs sensor-icon"></i>
+                    <div class="control-status">
+                        <div class="status-item">
+                            <span>Pump</span>
+                            <span class="badge {{ 'on' if sensors.pump_status == 'ON' else 'off' }}">
+                                {{ sensors.pump_status }}
+                            </span>
+                        </div>
+                        <div class="status-item">
+                            <span>Solenoid</span>
+                            <span class="badge {{ 'on' if sensors.solenoid_status == 'ON' else 'off' }}">
+                                {{ sensors.solenoid_status }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <div class="content-split">
+
+            <!-- LIVE CAMERA -->
+            <section class="video-section">
+                <h2><i class="fas fa-video"></i> Live Monitor</h2>
+
+                <div class="video-container">
+                    <img src="http://10.100.201.94/stream" class="live-feed">
+                    <div class="video-overlay">
+                        <span class="live-badge">LIVE</span>
+                    </div>
+                </div>
+
+                <div class="video-controls">
+
+                    <!-- CNN ANALYSIS -->
+                    <form action="/analyze_feed" method="post">
+                        <input type="hidden" name="snapshot_url" value="http://10.100.201.94/cam-hi.jpg">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-camera"></i> Capture & Analyze
+                        </button>
+                    </form>
+
+                    <!-- GEMINI EARLY PREDICTION -->
+                    <form action="/early_prediction" method="post" style="margin-top:10px;">
+                        <button type="submit" class="btn-secondary">
+                            <i class="fas fa-brain"></i> Early Disease Prediction (AI)
+                        </button>
+                    </form>
+
+                </div>
+            </section>
+
+            <!-- UPLOAD -->
+            <section class="upload-section">
+                <h2><i class="fas fa-upload"></i> Manual Diagnosis</h2>
+
+                <form action="/submit" method="post" enctype="multipart/form-data" class="upload-form">
+                    <div class="upload-area" id="drop-area">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <p>Drag & Drop or select image</p>
+
+                        <input type="file" name="image" id="fileElem" accept="image/*" required>
+                        <label class="btn-secondary" for="fileElem">Select File</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary analyze-btn">
+                        Analyze Upload
+                    </button>
+
+                    <!-- GEMINI EARLY PREDICTION -->
+                    <button formaction="/early_prediction" formmethod="post"
+                            class="btn-secondary analyze-btn">
+                        <i class="fas fa-brain"></i> Early Disease Prediction (AI)
+                    </button>
+                </form>
+            </section>
+
+        </div>
+
+        <!-- CNN RESULT -->
+        {% if pred is defined %}
+        <section class="results-section" id="results">
+            <div class="result-card">
+
+                <div class="result-header">
+                    <h2>Analysis Report</h2>
+                    <span class="confidence-badge">High Confidence</span>
+                </div>
+
+                <div class="result-body">
+
+                    <div class="result-image">
+                        <img src="{{ url_for('static', filename=uploaded_image) }}">
+                    </div>
+
+                    <div class="result-details">
+                        <h3 class="disease-title">{{ title }}</h3>
+                        <p class="disease-desc">{{ desc }}</p>
+
+                        <div class="action-plan">
+                            <h4><i class="fas fa-shield-alt"></i> Preventive Steps</h4>
+                            <p>{{ prevent }}</p>
+                        </div>
+
+                        {% if sname %}
+                        <div class="supplement-recommendation">
+                            <h4><i class="fas fa-flask"></i> Recommended Treatment</h4>
+                            <div class="supplement-box">
+                                <img src="{{ simage }}" onerror="this.style.display='none'">
+                                <div class="supplement-info">
+                                    <strong>{{ sname }}</strong>
+                                    <a href="{{ buy_link }}" target="_blank" class="buy-btn">Buy Now</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        </script>
+        {% endif %}
+
+        <!-- GEMINI EARLY RESULT -->
+        {% if early_report %}
+        <section class="results-section" id="early-results">
+            <div class="result-card" style="border-left:6px solid #7c3aed;">
+
+                <div class="result-header">
+                    <h2><i class="fas fa-seedling"></i> Early Disease Prediction (AI)</h2>
+                    <span class="confidence-badge" style="background:#7c3aed;">Gemini</span>
+                </div>
+
+                <div class="result-body">
+                    <div class="result-image">
+                        <img src="{{ url_for('static', filename=uploaded_image) }}">
+                    </div>
+
+                    <div class="result-details">
+                        <pre style="
+                            white-space: pre-wrap;
+                            background:#f5f3ff;
+                            padding:15px;
+                            border-radius:10px;
+                            font-family:'Outfit',sans-serif;">
+{{ early_report }}
+                        </pre>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <script>
+            document.getElementById('early-results').scrollIntoView({ behavior: 'smooth' });
+        </script>
+        {% endif %}
+
+    </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Environments and Secrets
+.env
+.env.*
+.venv/
+env/
+venv/
+ENV/
+
+# Python caching
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# User uploads and runtime files
+Smart Agri Leaf Disease/static/uploads/
+
+# IDE configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.log
